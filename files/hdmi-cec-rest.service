@@ -1,0 +1,10 @@
+[Uniti]
+Description=Start HDMI CEC REST application
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/hdmi-cec-rest
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

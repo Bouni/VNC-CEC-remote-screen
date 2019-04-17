@@ -1,0 +1,21 @@
+all:
+  hosts:
+    tv-umkleide:
+      ansible_ssh_host: 192.168.178.100
+    tv-fahrzeughalle:
+      ansible_ssh_host: 192.168.178.101
+  vars:
+    vnc_server: 192.168.178.200
+    vnc_password: Password123
+    config_disable_overscan: 1
+    config_overscan_left: 24
+    config_overscan_right: 24
+    config_overscan_top: 24
+    config_overscan_bottom: 24
+    config_framebuffer_width: 1920
+    config_framebuffer_height: 1080
+    config_hdmi_force_hotplug: 1
+    config_hdmi_mode: 16
+    config_hdmi_drive: 2
+    ansible_user: pi
+    ansible_become_method: sudo
