@@ -154,23 +154,23 @@
         - { path: "/boot/config.txt", regex: "^hdmi_mode.*", replace: "hdmi_mode={{ config_hdmi_mode }}" }
         - { path: "/boot/config.txt", regex: "^hdmi_drive.*", replace: "hdmi_drive={{ config_hdmi_drive }}" }
 
-    - name: Place hdmi-cec-rest binary in /usr/bin/
+    - name: Get flask-hdmi-cec
+      become: yes
+      git: 
+        repo: 'https://github.com/Bouni/flask-hdmi-cec.git'
+        dst: '/opt'
+        
+    - name: Place flask-hdmi-cec.service
       become: yes
       copy:
-        src: files/hdmi-cec-rest
-        dest: "/usr/bin/hdmi-cec-rest"
-        mode: 0755
+        remote_src: yes
+        src: '/opt/flask-hdmi-cec/flask-hdmi-cec.service'
+        dest: "/etc/systemd/system/flask-hdmi-cec.service"
 
-    - name: Place hdmi-cec-rest.service
-      become: yes
-      copy:
-        src: files/hdmi-cec-rest.service
-        dest: "/etc/systemd/system/hdmi-cec-rest.service"
-
-    - name: Enable and start hdmi-cec-rest systemd service
+    - name: Enable and start flask-hdmi-cec systemd service
       become: yes
       systemd:
-        name: hdmi-cec-rest
+        name: flask-hdmi-cec
         state: started
         enabled: yes
         masked: no
@@ -183,64 +183,4 @@
         name: xinit-login
         state: restarted
         daemon_reload: yes
-
-        #    - name: reboot
-        #      become: yes
-        #      reboot:
-  
-        #
-        #    - name: create xorg.conf.d directory
-        #      become: yes
-        #      file:
-        #        path: /etc/X11/xorg.conf.d
-        #        state: directory
-        #
-        #    - name: create 99-calibration.conf
-        #      become: yes
-        #      copy:
-        #        src: files/99-calibration.conf
-        #        dest: "/etc/X11/xorg.conf.d/99-calibration.conf"
-        #      notify:
-        #        - restart X11
-        #
-        #    - name: place xinitrc
-        #      copy:
-        #        src: files/xinitrc
-        #        dest: "{{ ansible_env.HOME }}/.xinitrc"
-        #      notify:
-        #        - restart X11
-        #
-        #    - name: create .config/awesome dir
-        #      file:
-        #        path: "{{ ansible_env.HOME }}/.config/awesome/"
-        #        state: directory
-        #        recurse: yes
-        #
-        #    - name: copy awesome configs
-        #      copy:
-        #        src: "files/{{ item }}"
-        #        dest: "{{ ansible_env.HOME }}/.config/awesome/{{ item }}"
-        #      with_items:
-        #        - rc.lua
-        #        - theme.lua
-        #      notify:
-        #        - restart X11
-        #
-        #    - name: start X11 direclty with systemd
-        #      become: yes
-        #      copy:
-        #        src: files/xinit-login.service
-        #        dest: /lib/systemd/system/xinit-login.service
-        #      notify:
-        #        - restart X11
-        #
-        #    - name: enable and start systemd service
-        #      become: yes
-        #      systemd:
-        #        name: xinit-login
-        #        state: started
-        #        enabled: yes
-        #        masked: no
-        #        daemon_reload: yes
-        #
-
+ 
