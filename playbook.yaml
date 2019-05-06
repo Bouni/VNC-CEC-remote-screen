@@ -89,9 +89,7 @@
             - xfonts-75dpi 
             - xfonts-base 
             - matchbox-window-manager
-            - libcec-dev 
-            - cec-utils 
-            - make
+            - libcec
         state: present
 
     - name: Allow all users to start X11
