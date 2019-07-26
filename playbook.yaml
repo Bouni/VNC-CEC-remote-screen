@@ -78,6 +78,8 @@
       become: yes
       apt:
         name:
+            - git
+            - python3-setuptools
             - xtightvncviewer 
             - vim 
             - cec-utils 
@@ -91,6 +93,14 @@
             - matchbox-window-manager
             - libcec
         state: present
+
+    - name: Install gunicorn via pip
+      become: yes
+      pip:
+        name: 
+          - gunicorn
+          - flask
+        executable: /usr/bin/pip
 
     - name: Allow all users to start X11
       become: yes
@@ -156,7 +166,7 @@
       become: yes
       git: 
         repo: 'https://github.com/Bouni/flask-hdmi-cec.git'
-        dst: '/opt'
+        dest: '/opt/flask-hdmi-cec'
         
     - name: Place flask-hdmi-cec.service
       become: yes
@@ -169,7 +179,7 @@
       become: yes
       systemd:
         name: flask-hdmi-cec
-        state: started
+        state: restarted
         enabled: yes
         masked: no
         daemon_reload: yes
