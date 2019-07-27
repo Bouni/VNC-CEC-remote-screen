@@ -7,79 +7,95 @@
       command: "raspi-config nonint do_hostname {{ inventory_hostname }}"
       when: ansible_hostname != inventory_hostname
       register: set_hostname
+      tags: [config]
     
     - name: Check if root fs needs to be expanded
       shell: df -h /
       register: root_fs_size
       changed_when: False
+      tags: [config]
       
     - name: Expand the filesystem via raspi-config
       become: yes
       command: raspi-config nonint do_expand_rootfs
       when: root_fs_size.stdout.find("2.0G") > 0
       register: resize_rootfs
+      tags: [config]
 
     - name: Reboot the Pi
       become: yes
       reboot:
       when: set_hostname.changed or resize_rootfs.changed
+      tags: [config]
       
     - name: Disable the camera via raspi-config
       become: yes
       command: raspi-config nonint do_camera 1
       changed_when: False
+      tags: [config]
  
     - name: Disable VNC via raspi-config
       become: yes
       command: raspi-config nonint do_vnc  1
       changed_when: False
+      tags: [config]
 
     - name: Disable SPI via raspi-config
       become: yes
       command: raspi-config nonint do_spi 1
       changed_when: False
+      tags: [config]
 
     - name: Disable I2C via raspi-config
       become: yes
       command: raspi-config nonint do_i2c 1
       changed_when: False
+      tags: [config]
 
     - name: Disable serial via raspi-config
       become: yes
       command: raspi-config nonint do_serial 1
       changed_when: False
+      tags: [config]
 
     - name: Disable one wire via raspi-config
       become: yes
       command: raspi-config nonint do_onewire 1
       changed_when: False
+      tags: [config]
 
     - name: Set the locale via raspi-config
       become: yes
       command: raspi-config nonint do_change_locale en_US.UTF-8
       changed_when: False
+      tags: [config]
           
     - name: Set the keyboard layout via raspi-config
       become: yes
       command: raspi-config nonint do_configure_keyboard us
       changed_when: False
+      tags: [config]
 
     - name: Update package list
       become: yes
       apt:
         update_cache: yes
+      tags: [update]
       
     - name: Upgrade packages
       become: yes
       apt:
           upgrade: dist
+      tags: [update]
 
     - name: Install require packages
       become: yes
       apt:
         name:
             - git
+            - python-setuptools
             - python3-setuptools
+            - python3-pip
             - xtightvncviewer 
             - vim 
             - cec-utils 
@@ -91,16 +107,18 @@
             - xfonts-75dpi 
             - xfonts-base 
             - matchbox-window-manager
-            - libcec
+            - libcec4
         state: present
+      tags: [install]
 
-    - name: Install gunicorn via pip
+    - name: Install gunicorn and flask via pip
       become: yes
       pip:
         name: 
           - gunicorn
           - flask
-        executable: /usr/bin/pip
+        executable: pip3
+      tags: [install]
 
     - name: Allow all users to start X11
       become: yes
@@ -108,11 +126,13 @@
         path: /etc/X11/Xwrapper.config
         regexp: '^allowed_users='
         line: 'allowed_users=anybody'
+      tags: [vnc]
 
     - name: Place xinitrc
       copy:
         src: files/.xinitrc
         dest: "{{ ansible_env.HOME }}/.xinitrc"
+      tags: [vnc]
 
     - name: Set password and target IP of VNC Server
       become: yes
@@ -120,6 +140,7 @@
         path: "{{ ansible_env.HOME }}/.xinitrc"
         regexp: '^exec echo'
         line: 'exec echo "{{ vnc_password }}" | xtightvncviewer -viewonly -fullscreen -autopass {{ vnc_server }}:0'
+      tags: [vnc]
 
     - name: Place xinit-login.service
       become: yes
@@ -128,6 +149,7 @@
         dest: "/etc/systemd/system/xinit-login.service"
       notify:
         - restart X11
+      tags: [vnc]
 
     - name: Enable and start xinit-login systemd service
       become: yes
@@ -137,12 +159,14 @@
         enabled: yes
         masked: no
         daemon_reload: yes
+      tags: [vnc]
 
     - name: Place /boot/config.txt
       become: yes
       copy:
         src: files/config.txt
         dest: "/boot/config.txt"
+      tags: [display]
 
     - name: Configure config.txt
       become: yes
@@ -161,12 +185,22 @@
         - { path: "/boot/config.txt", regex: "^hdmi_force_hotplug.*", replace: "hdmi_force_hotplug={{ config_hdmi_force_hotplug }}" }
         - { path: "/boot/config.txt", regex: "^hdmi_mode.*", replace: "hdmi_mode={{ config_hdmi_mode }}" }
         - { path: "/boot/config.txt", regex: "^hdmi_drive.*", replace: "hdmi_drive={{ config_hdmi_drive }}" }
+      tags: [display]
+      register: bootconfig
+
+    - name: Reboot the Pi
+      become: yes
+      reboot:
+      when: bootconfig.changed 
+      tags: [display]
+      
 
     - name: Get flask-hdmi-cec
       become: yes
       git: 
         repo: 'https://github.com/Bouni/flask-hdmi-cec.git'
         dest: '/opt/flask-hdmi-cec'
+      tags: [cec]
         
     - name: Place flask-hdmi-cec.service
       become: yes
@@ -174,6 +208,7 @@
         remote_src: yes
         src: '/opt/flask-hdmi-cec/flask-hdmi-cec.service'
         dest: "/etc/systemd/system/flask-hdmi-cec.service"
+      tags: [cec]
 
     - name: Enable and start flask-hdmi-cec systemd service
       become: yes
@@ -183,6 +218,7 @@
         enabled: yes
         masked: no
         daemon_reload: yes
+      tags: [cec]
 
   handlers:
     - name: restart X11
