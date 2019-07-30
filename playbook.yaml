@@ -117,6 +117,7 @@
         name: 
           - gunicorn
           - flask
+          - flask_cors
         executable: pip3
       tags: [install]
 
